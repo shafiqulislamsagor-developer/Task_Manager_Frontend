@@ -8,7 +8,6 @@ import { Button } from "@/components/ui/button";
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -16,18 +15,21 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 
-// ✅ Zod schema for validation
-const FormSchema = z.object({
-  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
-  email: z.string().email({ message: "Invalid email address." }),
-  password: z
-    .string()
-    .min(6, { message: "Password must be at least 6 characters." }),
-});
+// ✅ Schema setup: Name optional if login mode
+const FormSchema = (login: boolean) =>
+  z.object({
+    name: login
+      ? z.string().optional() // login হলে name প্রয়োজন নেই
+      : z.string().min(2, { message: "Name must be at least 2 characters." }),
+    email: z.string().email({ message: "Invalid email address." }),
+    password: z
+      .string()
+      .min(6, { message: "Password must be at least 6 characters." }),
+  });
 
-export function ReusableForm() {
-  const form = useForm<z.infer<typeof FormSchema>>({
-    resolver: zodResolver(FormSchema),
+export function ReusableForm({ login = true }: { login: boolean }) {
+  const form = useForm<z.infer<ReturnType<typeof FormSchema>>>({
+    resolver: zodResolver(FormSchema(login)),
     defaultValues: {
       name: "",
       email: "",
@@ -35,28 +37,29 @@ export function ReusableForm() {
     },
   });
 
-  function onSubmit(data: z.infer<typeof FormSchema>) {
+  function onSubmit(data: z.infer<ReturnType<typeof FormSchema>>) {
     console.log(data);
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-        {/* Name */}
-        <FormField
-          control={form.control}
-          name="name"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Name</FormLabel>
-              <FormControl>
-                <Input placeholder="Your full name" {...field} />
-              </FormControl>
-              <FormDescription>This will be your display name.</FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {/* Name — only if login = false */}
+        {!login && (
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Your full name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         {/* Email */}
         <FormField
@@ -83,13 +86,33 @@ export function ReusableForm() {
               <FormControl>
                 <Input type="password" placeholder="••••••••" {...field} />
               </FormControl>
-              <FormDescription>Must be at least 6 characters.</FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <Button type="submit">Submit</Button>
+        <div className="flex items-center justify-center pt-5">
+          <Button type="submit" className="w-full">
+            {login ? "Login" : "Register"}
+          </Button>
+        </div>
+        <p className="mt-2 text-sm text-gray-600">
+          {login ? (
+            <>
+              Don’t have an account?{" "}
+              <a href="/register" className="text-blue-500 hover:underline">
+                Register
+              </a>
+            </>
+          ) : (
+            <>
+              Already have an account?{" "}
+              <a href="/login" className="text-blue-500 hover:underline">
+                Login
+              </a>
+            </>
+          )}
+        </p>
       </form>
     </Form>
   );
