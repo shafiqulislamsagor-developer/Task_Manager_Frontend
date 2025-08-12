@@ -1,9 +1,5 @@
 "use client";
 
-import { zodResolver } from "@hookform/resolvers/zod";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
-
 import { Button } from "@/components/ui/button";
 import {
   Form,
@@ -14,6 +10,16 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import {
+  useLoginMutation,
+  useRegisterMutation,
+} from "@/redux/services/authApi";
+import { zodResolver } from "@hookform/resolvers/zod";
+import Cookies from "js-cookie";
+import Link from "next/link";
+import { useRouter, useSearchParams } from "next/navigation";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
 
 // ✅ Schema setup: Name optional if login mode
 const FormSchema = (login: boolean) =>
@@ -28,6 +34,16 @@ const FormSchema = (login: boolean) =>
   });
 
 export function ReusableForm({ login = true }: { login: boolean }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const redirectTo = searchParams.get("redirectTo") || "/";
+  const [
+    registerApi,
+    { isLoading: isRegisterLoading, isError: isRegisterError },
+  ] = useRegisterMutation();
+  const [loginApi, { isLoading: loginLoading, isError: loginError }] =
+    useLoginMutation();
   const form = useForm<z.infer<ReturnType<typeof FormSchema>>>({
     resolver: zodResolver(FormSchema(login)),
     defaultValues: {
@@ -38,13 +54,37 @@ export function ReusableForm({ login = true }: { login: boolean }) {
   });
 
   function onSubmit(data: z.infer<ReturnType<typeof FormSchema>>) {
-    console.log(data);
+    if (login) {
+      loginApi(data)
+        .unwrap()
+        .then((res) => {
+          console.log("success", res);
+          Cookies.set("accessToken", res.accessToken, {
+            expires: 0.0104,
+            secure: true,
+            sameSite: "strict",
+          });
+          router.push(redirectTo);
+        })
+        .catch((err) => {
+          console.log("error", err);
+        });
+    } else {
+      registerApi(data)
+        .unwrap()
+        .then((res) => {
+          console.log("success", res);
+          router.push("/login");
+        })
+        .catch((err) => {
+          console.log("error", err);
+        });
+    }
   }
 
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-        {/* Name — only if login = false */}
         {!login && (
           <FormField
             control={form.control}
@@ -100,16 +140,16 @@ export function ReusableForm({ login = true }: { login: boolean }) {
           {login ? (
             <>
               Don’t have an account?{" "}
-              <a href="/register" className="text-blue-500 hover:underline">
+              <Link href="/register" className="text-blue-500 hover:underline">
                 Register
-              </a>
+              </Link>
             </>
           ) : (
             <>
               Already have an account?{" "}
-              <a href="/login" className="text-blue-500 hover:underline">
+              <Link href="/login" className="text-blue-500 hover:underline">
                 Login
-              </a>
+              </Link>
             </>
           )}
         </p>
