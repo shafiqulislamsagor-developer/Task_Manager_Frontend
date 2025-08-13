@@ -10,15 +10,17 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { useAuth } from "@/contexts/AuthContext";
+import { setToken, setUser } from "@/redux/features/authSlice";
 import {
   useLoginMutation,
   useRegisterMutation,
 } from "@/redux/services/authApi";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Cookies from "js-cookie";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
 import { z } from "zod";
 
 // ✅ Schema setup: Name optional if login mode
@@ -34,7 +36,9 @@ const FormSchema = (login: boolean) =>
   });
 
 export function ReusableForm({ login = true }: { login: boolean }) {
+  const { login: loginAuth } = useAuth();
   const router = useRouter();
+  const dispatch = useDispatch();
   const searchParams = useSearchParams();
 
   const redirectTo = searchParams.get("redirectTo") || "/";
@@ -59,11 +63,9 @@ export function ReusableForm({ login = true }: { login: boolean }) {
         .unwrap()
         .then((res) => {
           console.log("success", res);
-          Cookies.set("accessToken", res.accessToken, {
-            expires: 0.0104,
-            secure: true,
-            sameSite: "strict",
-          });
+          loginAuth(res.user, res.accessToken);
+          dispatch(setToken(res.accessToken));
+          dispatch(setUser(res.user));
           router.push(redirectTo);
         })
         .catch((err) => {
