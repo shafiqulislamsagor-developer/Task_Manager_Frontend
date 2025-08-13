@@ -17,7 +17,7 @@ const mutex = new Mutex();
 
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL,
-  credentials: "include", // refreshToken cookie পাঠানোর জন্য
+  credentials: "include",
   prepareHeaders: (headers, { getState }) => {
     const state = getState() as RootState;
     const token = state.auth.accessToken || Cookies.get("accessToken");
@@ -38,23 +38,29 @@ export const baseQueryWithReauth: BaseQueryFn<
     if (!mutex.isLocked()) {
       const release = await mutex.acquire();
       try {
-        // Refresh token call
         const refreshResult = await baseQuery(
-          "/auth/refresh-token",
+          {
+            url: "/auth/refresh-token",
+            credentials: "include",
+          },
           api,
           extraOptions
         );
-        const data = refreshResult.data as RefreshResponse | undefined;
 
+        if (refreshResult.error) {
+          api.dispatch(logout());
+          return refreshResult;
+        }
+
+        const data = refreshResult.data as RefreshResponse;
         if (data?.accessToken) {
-          // Cookies + Redux update
           Cookies.set("accessToken", data.accessToken, {
-            expires: 0.0104, // 15 min
+            expires: 0.0104,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
           });
           api.dispatch(setToken(data.accessToken));
-          // Re-run original query
+
           result = await baseQuery(args, api, extraOptions);
         } else {
           api.dispatch(logout());

@@ -17,8 +17,10 @@ import {
   useRegisterMutation,
 } from "@/redux/services/authApi";
 import { zodResolver } from "@hookform/resolvers/zod";
+import Cookies from "js-cookie";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 import { useForm } from "react-hook-form";
 import { useDispatch } from "react-redux";
 import { z } from "zod";
@@ -64,6 +66,11 @@ export function ReusableForm({ login = true }: { login: boolean }) {
         .then((res) => {
           console.log("success", res);
           loginAuth(res.user, res.accessToken);
+          Cookies.set("refreshToken", res.refreshToken, {
+            expires: 0.0104,
+            secure: process.env.NODE_ENV === "production",
+            sameSite: "strict",
+          });
           dispatch(setToken(res.accessToken));
           dispatch(setUser(res.user));
           router.push(redirectTo);
@@ -85,77 +92,89 @@ export function ReusableForm({ login = true }: { login: boolean }) {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="w-2/3 space-y-6">
-        {!login && (
+    <Suspense fallback={<div>Loading...</div>}>
+      <Form {...form}>
+        <form
+          onSubmit={form.handleSubmit(onSubmit)}
+          className="w-2/3 space-y-6"
+        >
+          {!login && (
+            <FormField
+              control={form.control}
+              name="name"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Name</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Your full name" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Email */}
           <FormField
             control={form.control}
-            name="name"
+            name="email"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Name</FormLabel>
+                <FormLabel>Email</FormLabel>
                 <FormControl>
-                  <Input placeholder="Your full name" {...field} />
+                  <Input
+                    type="email"
+                    placeholder="you@example.com"
+                    {...field}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
             )}
           />
-        )}
 
-        {/* Email */}
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="you@example.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+          {/* Password */}
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password</FormLabel>
+                <FormControl>
+                  <Input type="password" placeholder="••••••••" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-        {/* Password */}
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Password</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="••••••••" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <div className="flex items-center justify-center pt-5">
-          <Button type="submit" className="w-full">
-            {login ? "Login" : "Register"}
-          </Button>
-        </div>
-        <p className="mt-2 text-sm text-gray-600">
-          {login ? (
-            <>
-              Don’t have an account?{" "}
-              <Link href="/register" className="text-blue-500 hover:underline">
-                Register
-              </Link>
-            </>
-          ) : (
-            <>
-              Already have an account?{" "}
-              <Link href="/login" className="text-blue-500 hover:underline">
-                Login
-              </Link>
-            </>
-          )}
-        </p>
-      </form>
-    </Form>
+          <div className="flex items-center justify-center pt-5">
+            <Button type="submit" className="w-full">
+              {login ? "Login" : "Register"}
+            </Button>
+          </div>
+          <p className="mt-2 text-sm text-gray-600">
+            {login ? (
+              <>
+                Don’t have an account?{" "}
+                <Link
+                  href="/register"
+                  className="text-blue-500 hover:underline"
+                >
+                  Register
+                </Link>
+              </>
+            ) : (
+              <>
+                Already have an account?{" "}
+                <Link href="/login" className="text-blue-500 hover:underline">
+                  Login
+                </Link>
+              </>
+            )}
+          </p>
+        </form>
+      </Form>
+    </Suspense>
   );
 }
