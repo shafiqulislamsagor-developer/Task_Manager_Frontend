@@ -66,6 +66,7 @@ export function ReusableForm({ login = true }: { login: boolean }) {
           console.log("success", res);
           loginAuth(res.user, res.accessToken);
           Cookies.set("refreshToken", res.refreshToken, {
+            httpOnly: true,
             expires: 0.0104,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
