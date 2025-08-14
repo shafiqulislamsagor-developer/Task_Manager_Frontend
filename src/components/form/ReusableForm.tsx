@@ -17,7 +17,6 @@ import {
   useRegisterMutation,
 } from "@/redux/services/authApi";
 import { zodResolver } from "@hookform/resolvers/zod";
-import Cookies from "js-cookie";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -65,12 +64,6 @@ export function ReusableForm({ login = true }: { login: boolean }) {
         .then((res) => {
           console.log("success", res);
           loginAuth(res.user, res.accessToken);
-          Cookies.set("refreshToken", res.refreshToken, {
-            httpOnly: true,
-            expires: 0.0104,
-            secure: process.env.NODE_ENV === "production",
-            sameSite: "strict",
-          });
           dispatch(setToken(res.accessToken));
           dispatch(setUser(res.user));
           router.push(redirectTo);
