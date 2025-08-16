@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const login = (userData: User, token: string) => {
     Cookies.set("accessToken", token, {
-      expires: 0.0104,
+      expires: 15 / 1440,
       secure: true,
       sameSite: "strict",
     });
@@ -43,7 +43,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const logout = () => {
     Cookies.remove("accessToken");
     localStorage.removeItem("user");
-    localStorage.removeItem("refreshToken");
+    Cookies.remove("refreshToken");
     setUser(null);
   };
 

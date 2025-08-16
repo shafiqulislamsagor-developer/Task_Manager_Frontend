@@ -1,8 +1,10 @@
 export interface UserProfile {
-  id: string;
-  name: string;
-  email: string;
-  role: "admin" | "user";
-  createdAt: string;
-  updatedAt: string;
+  data: {
+    id: string;
+    name: string;
+    email: string;
+    role: "admin" | "user";
+    createdAt: string;
+    updatedAt: string;
+  };
 }

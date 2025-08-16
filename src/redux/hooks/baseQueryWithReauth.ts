@@ -55,7 +55,7 @@ export const baseQueryWithReauth: BaseQueryFn<
         const data = refreshResult.data as RefreshResponse;
         if (data?.accessToken) {
           Cookies.set("accessToken", data.accessToken, {
-            expires: 0.0104,
+            expires: 15 / 1440,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
           });
